@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Drone Delivery – Confirmation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: white;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        h2 { margin-bottom: 10px; letter-spacing: 1px; }
+
+        p { font-size: 15px; color: #d0eaff; margin-bottom: 20px; }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 12px;
+            font-size: 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-yes {
+            background: linear-gradient(135deg, #00ffcc, #00bcd4);
+            color: #003333;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+        }
+
+        .btn-no {
+            background: linear-gradient(135deg, #ff4b4b, #c0392b);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 75, 75, 0.6);
+        }
+
+        .btn:hover { transform: scale(1.03); opacity: 0.95; }
+
+        .drone-info, .mission-status, .urgence-status, .status {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .drone-info p { color: #ffffffcc; }
+
+        .mission-status, .urgence-status {
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .mission-status { color: #9fdcff; }
+        .urgence-status { color: #9fdcff; }
+    </style>
+</head>
+
+<body>
+<div class="panel">
+    <h2>DRONE DELIVERY</h2>
+    <p>Voulez-vous annuler la livraison ?</p>
+
+    <form method="post">
+       <button class="btn btn-yes" type="submit" name="reponse" value="y">Oui, annuler</button>
+       <button class="btn btn-no" type="submit" name="reponse" value="n">Non, continuer</button>
+    </form>
+
+    <div class="drone-info">
+        <p>Destination actuelle : <span id="currentAddress">Aucune</span></p>
+        <p>Distance restante : <span id="currentDistance">0.00</span> m</p>
+    </div>
+
+    <div class="mission-status" id="missionStatus">
+        Mission en cours...
+    </div>
+
+    <div class="urgence-status" id="urgenceStatus">
+        Pas d'urgence
+    </div>
+
+    <div class="status">
+        Système sécurisé · Communication temps réel
+    </div>
+</div>
+
+<script>
+async function updateStatus() {
+    try {
+        const response = await fetch('/status');
+        const data = await response.json();
+
+        // Mise à jour des infos du drone
+        document.getElementById('currentAddress').innerText = data.address || 'Aucune';
+        document.getElementById('currentDistance').innerText = data.distance !== undefined ? data.distance.toFixed(2) : '0.00';
+
+        // Etat de la mission
+        const missionElem = document.getElementById('missionStatus');
+        if (data.mission_status) {
+            missionElem.innerText = data.mission_status;
+            missionElem.style.color = data.mission_status.includes("terminée") ? "#00ff99" : "#9fdcff";
+        } else if (data.address === "Base" && data.distance < 1) {
+            missionElem.innerText = "Mission terminée : le drone est rentré à la base";
+            missionElem.style.color = "#00ff99";
+        } else {
+            missionElem.innerText = "Mission en cours...";
+            missionElem.style.color = "#9fdcff";
+        }
+
+        // Etat urgence
+        const urgenceElem = document.getElementById('urgenceStatus');
+        if (data.urgence) {
+            urgenceElem.innerText = "⚠️ Urgence détectée !";
+            urgenceElem.style.color = "#ff3300";
+        } else {
+            urgenceElem.innerText = "Pas d'urgence";
+            urgenceElem.style.color = "#9fdcff";
+        }
+
+    } catch (err) {
+        console.error('Erreur:', err);
+    }
+}
+
+// Mise à jour toutes les secondes
+setInterval(updateStatus, 1000);
+</script>
+</body>
+</html>
